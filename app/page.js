@@ -1,8 +1,13 @@
 'use client'
 import { useState, useEffect } from 'react'
-import MapView from '@/components/MapView'
+import dynamic from 'next/dynamic'
 import Rsvp from '@/components/Rsvp'
 import Checkin from '@/components/Checkin'
+
+const MapView = dynamic(() => import('@/components/MapView'), {
+  ssr: false,
+  loading: () => <div className="map-wrap"><p style={{textAlign: 'center', paddingTop: 20}}>Loading map...</p></div>
+})
 
 export default function Page() {
   const [data, setData] = useState({ type: 'FeatureCollection', features: [] })
