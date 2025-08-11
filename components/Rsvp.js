@@ -10,8 +10,26 @@ export default function Rsvp({ court }) {
   const { session } = useSession()
   const [rsvps, setRsvps] = useState([])
   const [loading, setLoading] = useState(false)
+  const [isAlreadyBooked, setIsAlreadyBooked] = useState(false)
   const [date, setDate] = useState(new Date())
-  const [hour, setHour] = useState(new Date().getHours() + 1)
+  const [time, setTime] = useState(`${new Date().getHours() + 1}:00`)
+
+  useEffect(() => {
+    if (!court || !session || !rsvps.length) {
+      setIsAlreadyBooked(false)
+      return
+    }
+    const [hour, minute] = time.split(':').map(Number)
+    const selected_starts_at = new Date(date)
+    selected_starts_at.setHours(hour, minute, 0, 0)
+
+    const found = rsvps.some(
+      (rsvp) =>
+        rsvp.user_id === session.user.id &&
+        new Date(rsvp.starts_at).getTime() === selected_starts_at.getTime()
+    )
+    setIsAlreadyBooked(found)
+  }, [court, session, rsvps, date, time])
 
   useEffect(() => {
     if (!court) return
@@ -56,11 +74,12 @@ export default function Rsvp({ court }) {
     }
     setLoading(true)
 
+    const [hour, minute] = time.split(':').map(Number)
     const starts_at = new Date(date)
-    starts_at.setHours(hour, 0, 0, 0)
+    starts_at.setHours(hour, minute, 0, 0)
 
     const ends_at = new Date(starts_at)
-    ends_at.setHours(starts_at.getHours() + 1)
+    ends_at.setMinutes(starts_at.getMinutes() + 30)
 
     try {
       const { error } = await supabase.from('rsvps').insert({
@@ -108,14 +127,25 @@ export default function Rsvp({ court }) {
             min={format(new Date(), 'yyyy-MM-dd')}
             className="input"
           />
-          <select value={hour} onChange={(e) => setHour(parseInt(e.target.value))} className="input">
-            {Array.from({ length: 24 }, (_, i) => (
-              <option key={i} value={i}>{`${i}:00 - ${i + 1}:00`}</option>
-            ))}
+          <select value={time} onChange={(e) => setTime(e.target.value)} className="input">
+            {Array.from({ length: 48 }, (_, i) => {
+              const hour = Math.floor(i / 2)
+              const minute = i % 2 === 0 ? '00' : '30'
+              const nextHour = minute === '30' ? hour + 1 : hour
+              const nextMinute = minute === '30' ? '00' : '30'
+              const displayTime = `${hour}:${minute}`
+              const displayEndTime = `${nextHour}:${nextMinute}`
+              return (
+                <option key={displayTime} value={displayTime}>
+                  {`${displayTime} - ${displayEndTime}`}
+                </option>
+              )
+            })}
           </select>
-          <button type="submit" disabled={loading} className="btn">
-            {loading ? '...' : 'RSVP'}
+          <button type="submit" disabled={loading || isAlreadyBooked} className="btn">
+            {isAlreadyBooked ? 'Already booked' : (loading ? '...' : 'RSVP')}
           </button>
+          {isAlreadyBooked && <p className="kicker" style={{textAlign: 'center', margin: '4px 0 0'}}>You have already booked this time slot.</p>}
         </form>
       )}
     </div>
