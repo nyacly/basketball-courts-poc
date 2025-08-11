@@ -28,8 +28,7 @@ create table if not exists public.rsvps (
   court_lga text,
   starts_at timestamptz not null,
   ends_at timestamptz not null,
-  created_at timestamptz default now(),
-  unique(user_id, court_id, starts_at)
+  created_at timestamptz default now()
 );
 
 alter table public.rsvps enable row level security;
