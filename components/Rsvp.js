@@ -10,26 +10,39 @@ export default function Rsvp({ court }) {
   const { session } = useSession()
   const [rsvps, setRsvps] = useState([])
   const [loading, setLoading] = useState(false)
-  const [isAlreadyBooked, setIsAlreadyBooked] = useState(false)
+  const [userRsvpCount, setUserRsvpCount] = useState(0)
+  const [slotRsvpCount, setSlotRsvpCount] = useState(0)
   const [date, setDate] = useState(new Date())
   const [time, setTime] = useState(`${new Date().getHours() + 1}:00`)
 
   useEffect(() => {
-    if (!court || !session || !rsvps.length) {
-      setIsAlreadyBooked(false)
-      return
-    }
     const [hour, minute] = time.split(':').map(Number)
     const selected_starts_at = new Date(date)
     selected_starts_at.setHours(hour, minute, 0, 0)
 
-    const found = rsvps.some(
-      (rsvp) =>
-        rsvp.user_id === session.user.id &&
-        new Date(rsvp.starts_at).getTime() === selected_starts_at.getTime()
-    )
-    setIsAlreadyBooked(found)
-  }, [court, session, rsvps, date, time])
+    const count = rsvps.filter(
+      (rsvp) => new Date(rsvp.starts_at).getTime() === selected_starts_at.getTime()
+    ).length
+    setSlotRsvpCount(count)
+  }, [rsvps, date, time])
+
+  useEffect(() => {
+    if (!session) return
+    const fetchUserRsvpCount = async () => {
+      const { count, error } = await supabase
+        .from('rsvps')
+        .select('id', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .gte('ends_at', new Date().toISOString())
+
+      if (error) {
+        console.error('Error fetching user RSVP count:', error)
+      } else {
+        setUserRsvpCount(count)
+      }
+    }
+    fetchUserRsvpCount()
+  }, [session, rsvps]) // Depend on rsvps to refetch when user adds/cancels
 
   useEffect(() => {
     if (!court) return
@@ -99,6 +112,16 @@ export default function Rsvp({ court }) {
     }
   }
 
+  const handleUnRsvp = async (rsvpId) => {
+    if (!window.confirm('Are you sure you want to cancel this RSVP?')) return
+
+    const { error } = await supabase.from('rsvps').delete().match({ id: rsvpId })
+
+    if (error) {
+      alert(error.message)
+    }
+  }
+
   if (!court) return null
 
   return (
@@ -107,9 +130,18 @@ export default function Rsvp({ court }) {
       {rsvps.length > 0 ? (
         <ul className="list">
           {rsvps.map((rsvp) => (
-            <li key={rsvp.id}>
-              <strong>{rsvp.display_name || 'Anonymous'}</strong> at{' '}
-              {format(new Date(rsvp.starts_at), 'p')} on {format(new Date(rsvp.starts_at), 'MMM d')}
+            <li key={rsvp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <strong>{rsvp.display_name || 'Anonymous'}</strong>
+                <span className="kicker" style={{ marginLeft: 8 }}>
+                  {format(new Date(rsvp.starts_at), 'p')} on {format(new Date(rsvp.starts_at), 'MMM d')}
+                </span>
+              </div>
+              {session?.user?.id === rsvp.user_id && (
+                <button onClick={() => handleUnRsvp(rsvp.id)} className="btn secondary" style={{ padding: '4px 8px', fontSize: 12 }}>
+                  Cancel
+                </button>
+              )}
             </li>
           ))}
         </ul>
@@ -118,35 +150,40 @@ export default function Rsvp({ court }) {
       )}
 
       {session && (
-        <form onSubmit={handleRsvp} className="rsvp-form">
-          <h5>RSVP for a slot</h5>
-          <input
-            type="date"
-            value={format(date, 'yyyy-MM-dd')}
-            onChange={(e) => setDate(new Date(e.target.value))}
-            min={format(new Date(), 'yyyy-MM-dd')}
-            className="input"
-          />
-          <select value={time} onChange={(e) => setTime(e.target.value)} className="input">
-            {Array.from({ length: 48 }, (_, i) => {
-              const hour = Math.floor(i / 2)
-              const minute = i % 2 === 0 ? '00' : '30'
-              const nextHour = minute === '30' ? hour + 1 : hour
-              const nextMinute = minute === '30' ? '00' : '30'
-              const displayTime = `${hour}:${minute}`
-              const displayEndTime = `${nextHour}:${nextMinute}`
-              return (
-                <option key={displayTime} value={displayTime}>
-                  {`${displayTime} - ${displayEndTime}`}
-                </option>
-              )
-            })}
-          </select>
-          <button type="submit" disabled={loading || isAlreadyBooked} className="btn">
-            {isAlreadyBooked ? 'Already booked' : (loading ? '...' : 'RSVP')}
-          </button>
-          {isAlreadyBooked && <p className="kicker" style={{textAlign: 'center', margin: '4px 0 0'}}>You have already booked this time slot.</p>}
-        </form>
+        userRsvpCount >= 2 ? (
+          <p className="kicker" style={{ textAlign: 'center', marginTop: 16 }}>
+            You have reached your maximum of 2 active bookings.
+          </p>
+        ) : (
+          <form onSubmit={handleRsvp} className="rsvp-form">
+            <h5>RSVP for a slot ({slotRsvpCount} / 20 booked)</h5>
+            <input
+              type="date"
+              value={format(date, 'yyyy-MM-dd')}
+              onChange={(e) => setDate(new Date(e.target.value))}
+              min={format(new Date(), 'yyyy-MM-dd')}
+              className="input"
+            />
+            <select value={time} onChange={(e) => setTime(e.target.value)} className="input">
+              {Array.from({ length: 48 }, (_, i) => {
+                const hour = Math.floor(i / 2)
+                const minute = i % 2 === 0 ? '00' : '30'
+                const nextHour = minute === '30' ? hour + 1 : hour
+                const nextMinute = minute === '30' ? '00' : '30'
+                const displayTime = `${hour}:${minute}`
+                const displayEndTime = `${nextHour}:${nextMinute}`
+                return (
+                  <option key={displayTime} value={displayTime}>
+                    {`${displayTime} - ${displayEndTime}`}
+                  </option>
+                )
+              })}
+            </select>
+            <button type="submit" disabled={loading || slotRsvpCount >= 20} className="btn">
+              {slotRsvpCount >= 20 ? 'Slot is full' : (loading ? '...' : 'RSVP')}
+            </button>
+          </form>
+        )
       )}
     </div>
   )
