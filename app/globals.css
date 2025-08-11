@@ -18,5 +18,66 @@ button{cursor:pointer}
 .list{margin:0;padding:0;list-style:none}
 .list li{padding:8px 0;border-bottom:1px solid #1a1b21}
 .kicker{color:#8892a6;font-size:12px}
-.map-wrap{position:relative;height:calc(100vh - 64px)}
+.map-wrap{position:relative;height:calc(100vh - 57px)}
 .map{position:absolute;inset:0}
+
+.main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  height: calc(100vh - 57px); /* 57px is header height */
+}
+
+@media (min-width: 768px) {
+  .main-grid {
+    grid-template-columns: 1fr 420px;
+  }
+  .panel {
+    position: static;
+    height: calc(100vh - 57px);
+    border-top: 0;
+    border-bottom: 0;
+    border-radius: 0;
+  }
+}
+
+/* Auth styles */
+.auth-form { display: flex; gap: 8px; }
+.auth-input { padding: 6px 10px; border-radius: 6px; border: 1px solid #444; background: #222; color: #fff; }
+.auth-button { padding: 6px 12px; border-radius: 6px; border: 0; background: #ff6a00; color: #111; font-weight: 600; cursor: pointer; }
+.auth-button:disabled { opacity: .7; cursor: not-allowed; }
+.auth-loggedin { display: flex; align-items: center; gap: 12px; }
+.auth-profile-link { color: #fff; text-decoration: underline; }
+
+/* Sidebar panel improvements */
+.panel > div > div {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panel h3 {
+  margin-bottom: 0;
+}
+
+.panel h4 {
+  margin-bottom: 0;
+  font-size: 16px;
+}
+
+.checkin-container, .rsvp-container {
+  padding: 16px;
+  background: #1a1b2122;
+  border-radius: 12px;
+  border: 1px solid #1a1b21;
+}
+
+.rsvp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.rsvp-form h5 {
+    margin: 0;
+}
