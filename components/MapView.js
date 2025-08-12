@@ -107,12 +107,15 @@ function rebuildMarkers(cluster, geojson, onSelect, activeCourtIds) {
   cluster.clearLayers()
   const feats = geojson?.features || []
 
+  // Use a Set for O(1) lookups when checking active courts.
+  const activeIdSet = new Set(activeCourtIds || [])
+
   for (const f of feats) {
     if (f?.geometry?.type !== 'Point') continue
     const [lon, lat] = f.geometry.coordinates
     const p = f.properties || {}
 
-    const isActive = activeCourtIds?.includes(p.id)
+    const isActive = activeIdSet.has(p.id)
     const icon = L.divIcon({
       className: `hnm-dot ${isActive ? 'active' : ''}`,
       html: '',

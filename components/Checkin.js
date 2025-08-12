@@ -77,6 +77,12 @@ export default function Checkin({ court, rsvps }) {
     setLoading(true)
     setError(null)
 
+    if (!navigator.geolocation) {
+      setError('Geolocation not available in this browser.')
+      setLoading(false)
+      return
+    }
+
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         const { latitude, longitude, accuracy } = pos.coords
