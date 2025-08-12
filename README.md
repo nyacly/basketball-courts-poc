@@ -25,6 +25,13 @@ npm i
 npm run dev
 ```
 
+Optional tests:
+
+```
+npx playwright install
+npx playwright test
+```
+
 Open http://localhost:3000
 
 ## Features

@@ -4,6 +4,7 @@ import { supabase } from '@/components/supabase'
 import { useSession } from '@/components/AuthWrapper'
 import { formatDistanceToNow } from 'date-fns'
 import { haversine } from '@/lib/haversine'
+import { toast } from 'sonner'
 
 // Check-ins expire after 90 minutes
 const CHECKIN_EXPIRY_MINS = 90
@@ -71,7 +72,7 @@ export default function Checkin({ court, rsvps }) {
 
   const handleCheckin = async () => {
     if (!session) {
-      alert('You must be logged in to check in.')
+      toast.error('You must be logged in to check in.')
       return
     }
     setLoading(true)
@@ -109,14 +110,17 @@ export default function Checkin({ court, rsvps }) {
             expires_at: expires_at.toISOString(),
           })
           if (error) throw error
+          toast.success('Checked in')
         } catch (error) {
           setError(error.message)
+          toast.error(error.message)
         } finally {
           setLoading(false)
         }
       },
       (err) => {
         setError(err.message)
+        toast.error(err.message)
         setLoading(false)
       },
       { enableHighAccuracy: true, timeout: 10000 }
