@@ -1,9 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabase'
 import { useSession } from '@/components/AuthWrapper'
-
-const supabase = createClient()
 
 export default function Profile() {
   const { session, profile, loading: sessionLoading } = useSession()

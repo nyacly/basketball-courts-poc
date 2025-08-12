@@ -1,10 +1,8 @@
 'use client'
 import { useState } from 'react'
-import { createClient } from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabase'
 import { useSession } from './AuthWrapper'
 import Link from 'next/link'
-
-const supabase = createClient()
 
 export default function Auth() {
   const { session, profile } = useSession()
