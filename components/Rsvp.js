@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase } from '@/components/supabase'
 import { useSession } from '@/components/AuthWrapper'
 import { format } from 'date-fns'
 
