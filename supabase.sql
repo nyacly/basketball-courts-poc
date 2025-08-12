@@ -17,6 +17,7 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE public.profiles (
   id uuid NOT NULL PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   display_name text NULL,
+  home_court_id text NULL,
   created_at timestamptz NULL DEFAULT now()
 );
 COMMENT ON TABLE public.profiles IS 'Public-facing user profiles.';
