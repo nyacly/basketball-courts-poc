@@ -212,3 +212,8 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnp.*
+# Allow tracked library files in root lib directory
+!/lib/
+!/lib/**
+# Next.js build output
+/.next/
