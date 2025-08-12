@@ -1,6 +1,7 @@
 // app/layout.js
 import './globals.css'   // <-- this is required for styles to load
 import AuthWrapper from '@/components/AuthWrapper'
+import { Toaster } from 'sonner'
 
 export const metadata = {
   title: 'Basketball Courts POC',
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
         <AuthWrapper>
           {children}
         </AuthWrapper>
+        <Toaster richColors />
       </body>
     </html>
   )

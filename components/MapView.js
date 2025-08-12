@@ -4,6 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster' // provides L.markerClusterGroup
 import { haversine } from '@/lib/haversine'
+import { toast } from 'sonner'
 
 export default function MapView({ data, onSelect, activeCourtIds = [] }) {
   const mapEl = useRef(null)
@@ -171,7 +172,7 @@ function rebuildMarkers(cluster, geojson, onSelect, activeCourtIds) {
 
 function locateAndZoom(map, cluster, nearestLayer, meRef) {
   if (!navigator.geolocation) {
-    alert('Geolocation not available in this browser')
+    toast.error('Geolocation not available in this browser')
     return
   }
   navigator.geolocation.getCurrentPosition(
@@ -204,7 +205,7 @@ function locateAndZoom(map, cluster, nearestLayer, meRef) {
       const bounds = L.latLngBounds([me, ...nearest.map((n) => [n.ll.lat, n.ll.lng])])
       map.fitBounds(bounds, { padding: [40, 40] })
     },
-    (err) => alert(err.message),
+    (err) => toast.error(err.message),
     { enableHighAccuracy: true, timeout: 10000 }
   )
 }

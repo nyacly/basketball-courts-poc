@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react'
 import { supabase } from '@/components/supabase'
 import { useSession } from '@/components/AuthWrapper'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 
 export default function Rsvp({ court, rsvps, onRsvpChange }) {
   const { session } = useSession()
@@ -44,7 +45,7 @@ export default function Rsvp({ court, rsvps, onRsvpChange }) {
   const handleRsvp = async (e) => {
     e.preventDefault()
     if (!session) {
-      alert('You must be logged in to RSVP.')
+      toast.error('You must be logged in to RSVP.')
       return
     }
     setLoading(true)
@@ -66,10 +67,10 @@ export default function Rsvp({ court, rsvps, onRsvpChange }) {
         ends_at: ends_at.toISOString(),
       })
       if (error) throw error
-      alert('RSVP successful!')
+      toast.success('RSVP successful')
       onRsvpChange?.()
     } catch (error) {
-      alert(error.error_description || error.message)
+      toast.error(error.error_description || error.message)
     } finally {
       setLoading(false)
     }
@@ -81,8 +82,9 @@ export default function Rsvp({ court, rsvps, onRsvpChange }) {
     const { error } = await supabase.from('rsvps').delete().match({ id: rsvpId })
 
     if (error) {
-      alert(error.message)
+      toast.error(error.message)
     } else {
+      toast.success('RSVP cancelled')
       onRsvpChange?.()
     }
   }

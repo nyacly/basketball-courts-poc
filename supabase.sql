@@ -101,3 +101,16 @@ COMMENT ON VIEW public.v_checkins IS 'Public view of active check-ins with displ
 
 -- Advise on setting up realtime
 -- In Supabase dashboard: Database -> Replication -> add tables rsvps, checkins to realtime publication.
+
+-- Added for UX hardening
+-- 1) Ensure RSVP uniqueness (idempotency)
+create unique index if not exists rsvps_unique
+  on public.rsvps (user_id, court_id, starts_at);
+
+-- 2) Optional: relax nullability for email/name (should already be nullable)
+alter table public.rsvps alter column email drop not null;
+alter table public.rsvps alter column name drop not null;
+
+-- 3) Track source of check-in and accuracy (nullable)
+alter table public.checkins add column if not exists source text;
+alter table public.checkins add column if not exists accuracy double precision;
