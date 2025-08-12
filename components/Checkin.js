@@ -1,11 +1,9 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabaseClient'
+import { supabase } from '@/lib/supabase'
 import { useSession } from '@/components/AuthWrapper'
 import { formatDistanceToNow } from 'date-fns'
 import { haversine } from '@/lib/haversine'
-
-const supabase = createClient()
 
 // Check-ins expire after 90 minutes
 const CHECKIN_EXPIRY_MINS = 90

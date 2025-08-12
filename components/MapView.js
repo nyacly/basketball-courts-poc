@@ -112,7 +112,7 @@ function rebuildMarkers(cluster, geojson, onSelect, activeCourtIds) {
     const [lon, lat] = f.geometry.coordinates
     const p = f.properties || {}
 
-    const isActive = activeCourtIds.includes(p.id)
+    const isActive = activeCourtIds?.includes(p.id)
     const icon = L.divIcon({
       className: `hnm-dot ${isActive ? 'active' : ''}`,
       html: '',

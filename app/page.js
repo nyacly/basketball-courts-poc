@@ -4,9 +4,7 @@ import dynamic from 'next/dynamic'
 import Rsvp from '@/components/Rsvp'
 import Checkin from '@/components/Checkin'
 import HomeCourtButton from '@/components/HomeCourtButton'
-import { createClient } from '@/lib/supabaseClient'
-
-const supabase = createClient()
+import { supabase } from '@/lib/supabase'
 
 const MapView = dynamic(() => import('@/components/MapView'), {
   ssr: false,
