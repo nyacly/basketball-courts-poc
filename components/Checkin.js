@@ -9,14 +9,32 @@ const supabase = createClient()
 
 // Check-ins expire after 90 minutes
 const CHECKIN_EXPIRY_MINS = 90
-// User must be within 120m of the court to check in
-const CHECKIN_MAX_DIST_M = 120
+// User must be within 20m of the court to check in
+const CHECKIN_MAX_DIST_M = 20
 
-export default function Checkin({ court }) {
+export default function Checkin({ court, rsvps }) {
   const { session } = useSession()
   const [checkins, setCheckins] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [canCheckIn, setCanCheckIn] = useState(false)
+
+  useEffect(() => {
+    if (!session || !rsvps || rsvps.length === 0) {
+      setCanCheckIn(false)
+      return
+    }
+
+    const now = new Date()
+    const hasValidRsvp = rsvps.some(rsvp => {
+      const starts = new Date(rsvp.starts_at)
+      const ends = new Date(rsvp.ends_at)
+      return rsvp.user_id === session.user.id && now >= starts && now <= ends
+    })
+
+    setCanCheckIn(hasValidRsvp)
+
+  }, [rsvps, session])
 
   useEffect(() => {
     if (!court) return
@@ -105,7 +123,7 @@ export default function Checkin({ court }) {
 
   return (
     <div className="checkin-container">
-      <h4>Happening now</h4>
+      <h4>Happening now ({checkins.length})</h4>
       {checkins.length > 0 ? (
         <ul className="list">
           {checkins.map((checkin) => (
@@ -119,7 +137,7 @@ export default function Checkin({ court }) {
         <p className="kicker">No one is checked in right now.</p>
       )}
 
-      {session && (
+      {canCheckIn && (
         <div className="checkin-action" style={{ marginTop: 16 }}>
           <button onClick={handleCheckin} disabled={loading} className="btn">
             {loading ? 'Checking in...' : 'Check in here'}

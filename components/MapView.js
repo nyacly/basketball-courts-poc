@@ -5,7 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet.markercluster' // provides L.markerClusterGroup
 import { haversine } from '@/lib/haversine'
 
-export default function MapView({ data, onSelect }) {
+export default function MapView({ data, onSelect, activeCourtIds = [] }) {
   const mapEl = useRef(null)
   const mapRef = useRef(null)
   const clusterRef = useRef(null)
@@ -16,7 +16,8 @@ export default function MapView({ data, onSelect }) {
   useEffect(() => {
     if (document.getElementById('hnm-cluster-css')) return
     const css = `
-      .hnm-dot{width:12px;height:12px;border-radius:9999px;background:#35c0ff;border:2px solid #003a53}
+      .hnm-dot{width:12px;height:12px;border-radius:9999px;background:#35c0ff;border:2px solid #003a53;transition:background .3s}
+      .hnm-dot.active{background:#6be675;border-color:#0a5b14;box-shadow:0 0 8px #6be675;}
       .hnm-cluster{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:9999px;background:#ff6a00;color:#111;font-weight:700;font-size:12px;border:2px solid #7a3800;box-shadow:0 0 0 2px rgba(0,0,0,.15)}
       .hnm-me{width:14px;height:14px;border-radius:999px;background:#6be675;border:2px solid #0a5b14}
       .leaflet-control-locate{background:#111;color:#fff;border:1px solid #333;border-radius:8px;padding:4px 8px;cursor:pointer}
@@ -94,25 +95,31 @@ export default function MapView({ data, onSelect }) {
   // update when data changes
   useEffect(() => {
     if (!clusterRef.current) return
-    rebuildMarkers(clusterRef.current, data, onSelect)
-  }, [data, onSelect])
+    rebuildMarkers(clusterRef.current, data, onSelect, activeCourtIds)
+  }, [data, onSelect, activeCourtIds])
 
   return <div ref={mapEl} style={{ position: 'absolute', inset: 0 }} />
 }
 
 /* ---------------- helpers ---------------- */
 
-function rebuildMarkers(cluster, geojson, onSelect) {
+function rebuildMarkers(cluster, geojson, onSelect, activeCourtIds) {
   cluster.clearLayers()
   const feats = geojson?.features || []
-  const dotIcon = L.divIcon({ className: 'hnm-dot', html: '', iconSize: [12, 12] })
 
   for (const f of feats) {
     if (f?.geometry?.type !== 'Point') continue
     const [lon, lat] = f.geometry.coordinates
     const p = f.properties || {}
 
-    const m = L.marker([lat, lon], { icon: dotIcon, title: p.title || 'Basketball court' })
+    const isActive = activeCourtIds.includes(p.id)
+    const icon = L.divIcon({
+      className: `hnm-dot ${isActive ? 'active' : ''}`,
+      html: '',
+      iconSize: [12, 12],
+    })
+
+    const m = L.marker([lat, lon], { icon, title: p.title || 'Basketball court' })
 
     // 1) Fire selection on plain marker click (bullet-proof)
     m.on('click', () => {

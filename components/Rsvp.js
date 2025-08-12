@@ -6,9 +6,8 @@ import { format } from 'date-fns'
 
 const supabase = createClient()
 
-export default function Rsvp({ court }) {
+export default function Rsvp({ court, rsvps }) {
   const { session } = useSession()
-  const [rsvps, setRsvps] = useState([])
   const [loading, setLoading] = useState(false)
   const [userRsvpCount, setUserRsvpCount] = useState(0)
   const [slotRsvpCount, setSlotRsvpCount] = useState(0)
@@ -43,41 +42,6 @@ export default function Rsvp({ court }) {
     }
     fetchUserRsvpCount()
   }, [session, rsvps]) // Depend on rsvps to refetch when user adds/cancels
-
-  useEffect(() => {
-    if (!court) return
-    const fetchRsvps = async () => {
-      const { data, error } = await supabase
-        .from('v_rsvps')
-        .select('*')
-        .eq('court_id', court.id)
-        .gte('ends_at', new Date().toISOString())
-        .order('starts_at', { ascending: true })
-
-      if (error) {
-        console.error('Error fetching RSVPs:', error)
-      } else {
-        setRsvps(data)
-      }
-    }
-
-    fetchRsvps()
-
-    const channel = supabase
-      .channel(`rsvps:${court.id}`)
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'rsvps', filter: `court_id=eq.${court.id}` },
-        (payload) => {
-          fetchRsvps() // Refetch all RSVPs on change
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [court])
 
   const handleRsvp = async (e) => {
     e.preventDefault()
