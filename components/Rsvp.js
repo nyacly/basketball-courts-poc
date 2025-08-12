@@ -4,7 +4,7 @@ import { supabase } from '@/components/supabase'
 import { useSession } from '@/components/AuthWrapper'
 import { format } from 'date-fns'
 
-export default function Rsvp({ court, rsvps }) {
+export default function Rsvp({ court, rsvps, onRsvpChange }) {
   const { session } = useSession()
   const [loading, setLoading] = useState(false)
   const [userRsvpCount, setUserRsvpCount] = useState(0)
@@ -67,6 +67,7 @@ export default function Rsvp({ court, rsvps }) {
       })
       if (error) throw error
       alert('RSVP successful!')
+      onRsvpChange?.()
     } catch (error) {
       alert(error.error_description || error.message)
     } finally {
@@ -81,6 +82,8 @@ export default function Rsvp({ court, rsvps }) {
 
     if (error) {
       alert(error.message)
+    } else {
+      onRsvpChange?.()
     }
   }
 

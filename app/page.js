@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import dynamic from 'next/dynamic'
 import Rsvp from '@/components/Rsvp'
 import Checkin from '@/components/Checkin'
@@ -16,6 +16,7 @@ export default function Page() {
   const [selected, setSelected] = useState(null)
   const [rsvps, setRsvps] = useState([])
   const [activeCourtIds, setActiveCourtIds] = useState([])
+  const [homeCourtCount, setHomeCourtCount] = useState(0)
 
   useEffect(() => {
     fetch('/api/courts').then(r => r.json()).then(setData).catch(console.error)
@@ -27,23 +28,27 @@ export default function Page() {
     return () => clearInterval(interval)
   }, [])
 
-  useEffect(() => {
+  const fetchRsvps = useCallback(async () => {
     if (!selected) return
+    const { data, error } = await supabase
+      .from('v_rsvps')
+      .select('*')
+      .eq('court_id', selected.id)
+      .gte('ends_at', new Date().toISOString())
+      .order('starts_at', { ascending: true })
 
-    const fetchRsvps = async () => {
-      const { data, error } = await supabase
-        .from('v_rsvps')
-        .select('*')
-        .eq('court_id', selected.id)
-        .gte('ends_at', new Date().toISOString())
-        .order('starts_at', { ascending: true })
+    if (error) {
+      console.error('Error fetching RSVPs:', error)
+      setRsvps([])
+    } else {
+      setRsvps(data)
+    }
+  }, [selected])
 
-      if (error) {
-        console.error('Error fetching RSVPs:', error)
-        setRsvps([])
-      } else {
-        setRsvps(data)
-      }
+  useEffect(() => {
+    if (!selected) {
+      setRsvps([])
+      return
     }
 
     fetchRsvps()
@@ -53,15 +58,21 @@ export default function Page() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'rsvps', filter: `court_id=eq.${selected.id}` },
-        (payload) => {
-          fetchRsvps()
-        }
+        () => fetchRsvps()
       )
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
+  }, [selected, fetchRsvps])
+
+  useEffect(() => {
+    if (!selected) return
+    fetch(`/api/courts/${selected.id}/home-court-count`)
+      .then(r => r.json())
+      .then(data => setHomeCourtCount(data.count))
+      .catch(console.error)
   }, [selected])
 
   return (
@@ -70,6 +81,7 @@ export default function Page() {
         <MapView data={data} onSelect={setSelected} activeCourtIds={activeCourtIds} />
       </div>
       <aside className="panel">
+        {selected && <button onClick={() => setSelected(null)} className="panel-close-btn">×</button>}
         <h3>Selected court</h3>
         {selected ? (
           <div>
@@ -80,10 +92,10 @@ export default function Page() {
               lat {selected.lat.toFixed(4)}, lon {selected.lon.toFixed(4)}
             </div>
             <div style={{ marginTop: 16 }}>
-              <HomeCourtButton court={selected} />
+              <HomeCourtButton court={selected} homeCourtCount={homeCourtCount} />
             </div>
             <Checkin court={selected} rsvps={rsvps} />
-            <Rsvp court={selected} rsvps={rsvps} />
+            <Rsvp court={selected} rsvps={rsvps} onRsvpChange={fetchRsvps} />
           </div>
         ) : <div className="kicker">Tap a marker or press “Select” in a popup.</div>}
       </aside>
